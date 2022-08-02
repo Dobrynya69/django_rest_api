@@ -1,8 +1,10 @@
 from webbrowser import get
 from rest_framework.views import *
+from rest_framework import permissions
 from rest_framework.response import Response
 from .serializers import *
 from .models import *
+from .permissions import *
 
 class AllCountriesAPIView(APIView):
     def get(self, request, *args, **kwargs):
@@ -11,15 +13,18 @@ class AllCountriesAPIView(APIView):
 
 
     def post(self, request, *args, **kwargs):
+        data = request.data
         serializer = CountrySerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(author=request.user)
             return Response(serializer.data, status=200)
         else:
             return Response(serializer.errors, status=404)
 
 
 class CountryAPIView(APIView):
+    permission_classes = (IsAuthorOrReadOnly, permissions.IsAuthenticated,)
+
     def get_object(self, pk):
         try:
             country = Country.objects.get(pk=pk)
